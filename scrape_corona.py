@@ -15,7 +15,6 @@ def get_link_response(url:str) -> requests.Response:
 def choose_next_link(next_link_candidates: list) -> list:
     """
     choose_next_link
-
     Given a list of URLs strings from the website scraped, it chooses which link to go to next.
     """
     url_keywords = ["breitbart", "foxnews", "thehill", "dailymail", "wallstreet", "drudgereport", "hannity", "trump"]
@@ -32,7 +31,6 @@ def parse_html(webpage: requests.Response) -> tuple:
     """
     This function breaks apart an HTML document and returns the next links.
     It also summarizes and prints
-
     :param html:
     :return: summary, next_link_candidates
     """
@@ -46,7 +44,7 @@ def parse_html(webpage: requests.Response) -> tuple:
             else:
                 next_link_candidates_cleaned.append(webpage.url + link)
 
-    # <p> usually have the body text
+
     paragraphs = soup.find_all('p')
     if len(paragraphs) > 0:
         paragraphs_joined = " ".join(paragraphs)
@@ -56,6 +54,8 @@ def parse_html(webpage: requests.Response) -> tuple:
         summary = ""
 
     return summary, next_link_candidates
+
+
 
 
 def process_pages(responses_to_parse:list):
@@ -83,6 +83,3 @@ if __name__ == "__main__":
     while True:
         responses = [get_link_response(link) for link in next_links]
         process_pages(responses)
-
-
-        # next_links = choose_next_link(next_link_candidates)
