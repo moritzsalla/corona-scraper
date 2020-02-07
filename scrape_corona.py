@@ -38,10 +38,14 @@ def parse_html(webpage: requests.Response) -> tuple:
     """
     soup = BeautifulSoup(webpage.text, 'html.parser')
     next_link_candidates = [a.get('href') for a in soup.find_all('a')]
-    next_link_candidates = [a for a in next_link_candidates if a[0] != "/"]
+    next_link_candidates_cleaned = []
+    if len(next_link_candidates) > 0:
+        for link in next_link_candidates:
+            if link[0] != "/":
+                next_link_candidates_cleaned.append(link)
+            else:
+                next_link_candidates_cleaned.append(webpage.url + link)
 
-    if len(next_link_candidates) < 0:
-        next_link_candidates = []
 
     paragraphs = soup.find_all('p')
     if len(paragraphs) > 0:
@@ -62,5 +66,6 @@ if __name__ == "__main__":
     while True:
         responses = [get_link_response(link) for link in next_links]
         summaries, next_link_candidates = parse_html(responses[0])
+
 
         # next_links = choose_next_link(next_link_candidates)
