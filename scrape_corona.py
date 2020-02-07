@@ -28,13 +28,13 @@ def choose_next_link(next_link_candidates: list) ->list:
     return next_links
 
 
-# def parse_html(html:str) -> :
-    # """
+def parse_html(html:str) -> :
+    """
 
 
-    # :param html:
-    # :return: next_link_candidates
-    # """
+    :param html:
+    :return: next_link_candidates
+    """
 
 
 
@@ -43,7 +43,5 @@ if __name__ == "__main__":
 
     url_to_search = "https://drudgereport.com"
 
-    # while True:
-        # response = get_link_response(url_to_search)
-
-    print(get_link_response(url_to_search))
+    while True:
+        response = get_link_response(url_to_search)
