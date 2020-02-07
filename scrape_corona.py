@@ -1,7 +1,7 @@
 from gensim.summarization import summarize
 import pandas
 import numpy as np
-from bs4 import BeautifulSoup
+import bs4
 import requests
 
 
@@ -12,7 +12,7 @@ def get_link_response(url:str) -> requests.Response:
     return requests.get(url)
 
 
-def choose_next_link(next_link_candidates: list) -> list:
+def choose_next_link(next_link_candidates: list) ->list:
     """
     choose_next_link
 
@@ -20,7 +20,7 @@ def choose_next_link(next_link_candidates: list) -> list:
     """
     url_keywords = ["breitbart", "foxnews", "thehill", "dailymail", "wallstreet", "drudgereport", "hannity", "trump"]
     next_links = []
-    for link in next_link_candidates:
+    for link in urls:
         for rightist_link in url_keywords:
             if rightist_link in link:
                 next_links.append(link)
@@ -28,13 +28,12 @@ def choose_next_link(next_link_candidates: list) -> list:
     return next_links
 
 
-def parse_html(webpage: requests.Response) -> tuple:
+def parse_html(html:str) -> :
     """
-    This function breaks apart an HTML document and returns the next links.
-    It also summarizes and prints
+
 
     :param html:
-    :return: summary, next_link_candidates
+    :return: next_link_candidates
     """
     soup = BeautifulSoup(webpage.text, 'html.parser')
     next_link_candidates = [a.get('href') for a in soup.find_all('a')]
@@ -47,21 +46,13 @@ def parse_html(webpage: requests.Response) -> tuple:
                 next_link_candidates_cleaned.append(webpage.url + link)
 
 
-    paragraphs = soup.find_all('p')
-    if len(paragraphs) > 0:
-        paragraphs_joined = " ".join(paragraphs)
-        summary = summarize(paragraphs_joined, word_count=140)  # make a twitter summary!
-        print(f"{webpage.url} summarizes down to {summary}")
-    else:
-        summary = ""
 
-    return summary, next_link_candidates
 
 
 if __name__ == "__main__":
     print("Scraping stuff for corona. Limes!")
 
-    next_links = ["https://drudgereport.com"]
+    url_to_search = "https://drudgereport.com"
 
     while True:
         responses = [get_link_response(link) for link in next_links]
@@ -69,3 +60,4 @@ if __name__ == "__main__":
 
 
         # next_links = choose_next_link(next_link_candidates)
+        response = get_link_response(url_to_search)
