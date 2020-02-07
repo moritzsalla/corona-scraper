@@ -12,7 +12,7 @@ def get_link_response(url:str) -> requests.Response:
     return requests.get(url)
 
 
-def choose_next_link(urls: list) ->list:
+def choose_next_link(next_link_candidates: list) ->list:
     """
     choose_next_link
 
@@ -28,9 +28,20 @@ def choose_next_link(urls: list) ->list:
     return next_links
 
 
+def parse_html(html:str) -> :
+    """
+
+
+    :param html:
+    :return: next_link_candidates
+    """
+
+
 
 if __name__ == "__main__":
     print("Scraping stuff for corona. Limes!")
 
+    url_to_search = "https://drudgereport.com"
+
     while True:
-        
+        response = get_link_response(url_to_search)
