@@ -46,7 +46,7 @@ def parse_html(webpage: requests.Response) -> tuple:
             else:
                 next_link_candidates_cleaned.append(webpage.url + link)
 
-
+    # <p> usually have the body text
     paragraphs = soup.find_all('p')
     if len(paragraphs) > 0:
         paragraphs_joined = " ".join(paragraphs)
@@ -58,6 +58,23 @@ def parse_html(webpage: requests.Response) -> tuple:
     return summary, next_link_candidates
 
 
+def process_pages(responses_to_parse:list):
+    """
+    This takes a list of urls, runs the parser, and adds it all to a big list. This has a queue to work through, and
+    creates a new one to work through upon completions.
+    :param urls_to_parse:
+    :return:
+    """
+    links_for_next_round = []
+    for response in responses_to_parse:
+        summaries, next_links = parse_html(response)
+        # match links with summaries
+        # add next_links all into a big link list links_for_next_round for next processing round
+
+
+    return links_for_next_round
+
+
 if __name__ == "__main__":
     print("Scraping stuff for corona. Limes!")
 
@@ -65,7 +82,7 @@ if __name__ == "__main__":
 
     while True:
         responses = [get_link_response(link) for link in next_links]
-        summaries, next_link_candidates = parse_html(responses[0])
+        process_pages(responses)
 
 
         # next_links = choose_next_link(next_link_candidates)
