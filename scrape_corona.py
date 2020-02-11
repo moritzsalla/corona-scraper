@@ -30,8 +30,6 @@ def choose_next_link(next_link_candidates: list) ->list:
 
 def parse_html(html:str) -> :
     """
-
-
     :param html:
     :return: next_link_candidates
     """
@@ -44,9 +42,6 @@ def parse_html(html:str) -> :
                 next_link_candidates_cleaned.append(link)
             else:
                 next_link_candidates_cleaned.append(webpage.url + link)
-
-
-
 
 
 if __name__ == "__main__":
