@@ -20,8 +20,10 @@ def choose_next_link(next_link_candidates: list) -> list:
     We're using only the MOST TRUSTWORTHY not Fake News papers.
     Clearly we'll get non-sensational and useful content.
     """
+
+    print()
     url_keywords = ["breitbart", "foxnews", "thehill", "dailymail", "drudgereport", "hannity", "onion", "chinadaily",
-                    "rt.com"]
+                    "rt.com", "redstate", ]
     next_links = []
     for link in next_link_candidates:
         for rightist_url_keyword in url_keywords:
@@ -42,14 +44,18 @@ def parse_page(webpage: requests.Response) -> tuple:
     next_link_candidates_cleaned = []
     if len(next_link_candidates) > 0:
         for link in next_link_candidates:
-            if link[0] == "/":
-                next_link_candidates_cleaned.append(webpage.url + link)
+            if link:  # a.get('href') will sometimes throw
+                if link[0] == "/":
+                    next_link_candidates_cleaned.append(webpage.url + link)
 
-            if "mailto:" not in link:
-                next_link_candidates_cleaned.append(link)
+                if "mailto:" not in link:
+                    next_link_candidates_cleaned.append(link)
 
     paragraphs = soup.find_all('p')
+    paragraphs = [p.get_text() for p in paragraphs]
     if len(paragraphs) > 0:
+        # Todo: This needs somewhat complicated parsing... Elements that are embedded in <p> tags etc.
+        # Todo: Recursion?
         paragraphs_joined = " ".join(paragraphs)
         summary = summarize(paragraphs_joined, word_count=140)  # make a twitter summary!
         print(f"{webpage.url} summarizes down to {summary}")
