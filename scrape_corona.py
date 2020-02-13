@@ -32,7 +32,7 @@ def choose_next_link(next_link_candidates: list) -> list:
     return next_links
 
 
-def parse_page(webpage: requests.Response) -> tuple:
+def parse_page(webpage: requests.Response, dict_list_to_write: list) -> tuple:
     """
     This function breaks apart an HTML document and returns the next links.
     It also summarizes and prints
@@ -40,16 +40,16 @@ def parse_page(webpage: requests.Response) -> tuple:
     :return: summary for inclusion in data row, next_link_candidates_cleaned for the next round of scraping
     """
     soup = BeautifulSoup(webpage.text, 'html.parser')
-    next_link_candidates = [a.get('href') for a in soup.find_all('a')]
+    next_link_candidates = set([a.get('href') for a in soup.find_all('a')])  # make sure they're unique here
     next_link_candidates_cleaned = []
     if len(next_link_candidates) > 0:
         for link in next_link_candidates:
-            if link:  # a.get('href') will sometimes throw
-                if link[0] == "/":
-                    next_link_candidates_cleaned.append(webpage.url + link)
-
-                if "mailto:" not in link:
-                    next_link_candidates_cleaned.append(link)
+            if link:  # a.get('href') will sometimes return None if it contains a tag within. Ignore that.
+                if link != webpage.url and "mailto:" not in link and webpage.url not in dict_list_to_write:
+                    if link[0] == "/":
+                        next_link_candidates_cleaned.append(webpage.url + link)
+                    else:
+                        next_link_candidates_cleaned.append(link)
 
     paragraphs = soup.find_all('p')
     paragraphs = [p.get_text() for p in paragraphs]
@@ -57,15 +57,19 @@ def parse_page(webpage: requests.Response) -> tuple:
         # Todo: This needs somewhat complicated parsing... Elements that are embedded in <p> tags etc.
         # Todo: Recursion?
         paragraphs_joined = " ".join(paragraphs)
-        summary = summarize(paragraphs_joined, word_count=140)  # make a twitter summary!
-        print(f"{webpage.url} summarizes down to {summary}")
+        try:
+            summary = summarize(paragraphs_joined, word_count=140)  # make a twitter summary!
+            print(f"{webpage.url} summarizes down to {summary}")
+        except:
+            print(f"Unable to summarize: {paragraphs_joined}. String too short.")
+            summary = ""
     else:
         summary = ""
 
     return summary, next_link_candidates_cleaned
 
 
-def scrape_page(links: list) -> tuple:
+def scrape_page(links: list, dict_list_to_write:list) -> tuple:
     """
     Scrape_page coordinates the collection of pages from their links.
     Summarizes them.
@@ -77,12 +81,13 @@ def scrape_page(links: list) -> tuple:
 
     # First we use Requests to get the Response objects for every page in the links list
     responses = [get_link_response(link) for link in links]
+    # Make sure it's not already in our dict
     scraped_data_dict_list = []
     filtered_candidates = []
     # Then we iterate through them
     for response in responses:
         # create the summary and get all possible link candidates
-        summary, next_link_candidates = parse_page(response)
+        summary, next_link_candidates = parse_page(response, dict_list_to_write)
         # Then we choose the next links from the candidates
         related_links = choose_next_link(next_link_candidates)
         filtered_candidates.extend(related_links)
@@ -133,8 +138,9 @@ if __name__ == "__main__":
 
         # Get the list of data dicts and links for this depth. Add them to the list of dicts to convert to a table.
         # Each dict object gets converted into a row in the table
-        data_dict_list, next_links = scrape_page(next_links)
+        data_dict_list, next_links = scrape_page(next_links,dict_list_to_write)
         dict_list_to_write.extend(data_dict_list)
+        next_links = set(next_links)  # unique URLs only. set() removes duplicates.
 
         # Now that the scraped round is complete (prior 2 methods are quite time-consuming), increment the completed count.
         total_scraped_pages += current_amt_links
