@@ -12,17 +12,17 @@ def get_links_from_google_search(query):
     """
     Performs some regex manipulations on the received HTML to clean up the links.
 
-    - Positive Lookbehind: 
+    - Positive Lookbehind:
 
-        ?<=   
+        ?<=
 
     - This searches for '/url?q=' BEHIND (http:// | https:// | any variant thereof):
 
-        (?<=/url\?q=)(htt.*://.*)   
+        (?<=/url\?q=)(htt.*://.*)
 
     - link["href"] returns the 'href' element in the link object
 
-    - re.compile()  Compile a regular expression pattern into a regular expression object, 
+    - re.compile()  Compile a regular expression pattern into a regular expression object,
     which can be used for matching using its match() and search() methods, described below.
 
     - The sequence
@@ -34,7 +34,7 @@ def get_links_from_google_search(query):
 
         result = re.match(pattern, string)
 
-    - Find all "a" tags where the contents of the "href" element contain 
+    - Find all "a" tags where the contents of the "href" element contain
     the pattern in re.compile():
 
         find_all("a",href=re.compile("(?<=/url\?q=)(htt.*://.*)"))
@@ -70,5 +70,26 @@ def main(argv):
 
 
 if __name__ == "__main__":
-
-    main(sys.argv[1])
+    if(len(sys.argv) > 2):
+        # Too many arguments
+        print("Please enter only one keyword to search.")
+        searchterm=input("Search term: ")
+        while(' ' in searchterm or searchterm == ''):
+            print("Please enter only one keyword to search.")
+            searchterm=input("Search term: ")
+        print("---")
+        print("Retreiving Google results for: '", searchterm, "'")
+        main(searchterm)
+    elif(len(sys.argv) == 2 and sys.argv[1] != ''):
+        print("---")
+        print("Retreiving Google results for: '", searchterm, "'")
+        main(searchterm)
+    else:
+        print("Please enter only one keyword to search.")
+        searchterm=input("Search term: ")
+        while(' ' in searchterm or searchterm == ''):
+            print("Please enter only one keyword to search.")
+            searchterm=input("Search term: ")
+        print("---")
+        print("Retreiving Google results for: '", searchterm, "'")
+        main(searchterm)
