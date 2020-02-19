@@ -62,11 +62,29 @@ def find_site_from_url(links):
     return sites
 
 
-def main(argv):
-    links = get_links_from_google_search(argv)
-    sites = find_site_from_url(links)
+def print_list_of_sites(sites):
+    print("---")
+    print("Your options to choose from are:")
+    print()
+    options = dict()
+    for i, site in enumerate(sites.keys()):
+        options[i] = site
+        print(f'  {i:<3}- {site}')
+    print()
+    user_num = int(input("Please enter a number to investivate a site further: "))
+    while(user_num < 0 or user_num > len(sites)): 
+        user_num = input("Please select a number from the list above: ")
+    return options[user_num]
 
-    print(sites)
+
+def main(searchterm):
+    print("---")
+    print("Retreiving Google results for: '"+searchterm+"'")
+    links = get_links_from_google_search(searchterm)
+    sites = find_site_from_url(links)
+    user_selection = print_list_of_sites(sites)
+    print("---")
+    print("Selection: " + user_selection)
 
 
 if __name__ == "__main__":
@@ -77,19 +95,13 @@ if __name__ == "__main__":
         while(' ' in searchterm or searchterm == ''):
             print("Please enter only one keyword to search.")
             searchterm=input("Search term: ")
-        print("---")
-        print("Retreiving Google results for: '", searchterm, "'")
         main(searchterm)
     elif(len(sys.argv) == 2 and sys.argv[1] != ''):
-        print("---")
-        print("Retreiving Google results for: '", searchterm, "'")
-        main(searchterm)
+        main(sys.argv[1])
     else:
         print("Please enter only one keyword to search.")
         searchterm=input("Search term: ")
         while(' ' in searchterm or searchterm == ''):
             print("Please enter only one keyword to search.")
             searchterm=input("Search term: ")
-        print("---")
-        print("Retreiving Google results for: '", searchterm, "'")
         main(searchterm)
