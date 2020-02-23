@@ -1,5 +1,5 @@
 import sys
-from gensim.summarization import summarize
+from gensim.summarization import summarize, keywords
 import pandas
 import numpy as np
 import urllib.request
@@ -85,12 +85,28 @@ def print_list_of_sites(sites):
 def check_url(url):
     print("---")
     print("Checking URL...")
+    print(f"URL: {0}", url)
     try:
+        # I think this is necessary otherwise you get bad permission HTTP responses.
+        ssl._create_default_https_context=ssl._create_unverified_context
         html = urllib.request.urlopen(url).read()
         return html
     except:
-        print("Error retreiving HTML content...")
-        return None
+        print("Error retreiving HTML content with 'urllib'.")
+        try:
+            print("Trying with 'requests'...")
+            html = requests.get(url)
+            if not html:
+                raise Exception
+            else:
+                return html
+        except:
+            print("Error retreiving HTML content with 'requests'.")
+            print("See 'failed_urls.txt'.")
+            with open("failed_urls.txt", "a") as file:
+                file.write(url + '\n')
+            return None
+
 
 
 def get_html_content(user_selection, url):
@@ -102,6 +118,9 @@ def get_html_content(user_selection, url):
 
     soup = BeautifulSoup(html, features="html.parser")
     ps = soup.body.find_all('p')
+    # Check if is empty
+    if not ps:
+        print("Found no 'p' tags")
     for p in ps:
         line = p.get_text()
         # Removes any blank strings:
@@ -110,32 +129,41 @@ def get_html_content(user_selection, url):
 
     return text
 
+
 def get_summary(text):
     print("---")
     print("Summarizing text...")
+    # word_count=150 seems to be the minimum...
     summary = summarize(text, word_count=150)
     return summary
 
 
+def get_key_words(text):
+    print("---")
+    print("Finding keywords...")
+    keywords = keywords(text).split('\n')
+    return keywords
+
 
 def main(searchterm):
-    # I think this is necessary otherwise you get bad permission HTTP responses.
-    ssl._create_default_https_context = ssl._create_unverified_context
     print("---")
     print("Retreiving Google results for: '"+searchterm+"'")
-    links = get_links_from_google_search(searchterm)
-    sites = find_site_from_url(links)
-    user_selection = print_list_of_sites(sites)
+    links=get_links_from_google_search(searchterm)
+    sites=find_site_from_url(links)
+    user_selection=print_list_of_sites(sites)
+    # .split("&sa")[0] removes some extra Google junk on the url
+    url_to_search=sites[user_selection].split("&sa")[0]
 
-    while(not check_url(sites[user_selection])):
-        print("Error retrieving data, please try again.")
-        user_selection = print_list_of_sites(sites)
+    while(not check_url(url_to_search)):
+        print("---")
+        print("! Error retrieving data, please try again.")
+        user_selection=print_list_of_sites(sites)
 
-    text_list = get_html_content(user_selection, sites[user_selection])
-    text_block = "".join(text_list)
-    summary = get_summary(text_block)
+    text_list=get_html_content(user_selection, url_to_search)
+    text_block="".join(text_list)
+    summary=get_summary(text_block)
 
-    print("---")
+    print()
     print(summary)
 
 
@@ -143,17 +171,17 @@ if __name__ == "__main__":
     if(len(sys.argv) > 2):
         # Too many arguments
         print("Please enter only one keyword to search.")
-        searchterm = input("Search term: ")
+        searchterm=input("Search term: ")
         while(' ' in searchterm or searchterm == ''):
             print("Please enter only one keyword to search.")
-            searchterm = input("Search term: ")
+            searchterm=input("Search term: ")
         main(searchterm)
     elif(len(sys.argv) == 2 and sys.argv[1] != ''):
         main(sys.argv[1])
-    else:
-        print("Please enter only one keyword to search.")
-        searchterm = input("Search term: ")
-        while(' ' in searchterm or searchterm == ''):
-            print("Please enter only one keyword to search.")
-            searchterm = input("Search term: ")
-        main(searchterm)
+    #  else:
+        #  print("Please enter only one keyword to search.")
+        #  searchterm = input("Search term: ")
+        #  while(' ' in searchterm or searchterm == ''):
+            #  print("Please enter only one keyword to search.")
+            #  searchterm = input("Search term: ")
+        #  main(searchterm)
