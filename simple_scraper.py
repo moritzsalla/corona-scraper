@@ -2,10 +2,13 @@ import sys
 from gensim.summarization import summarize
 import pandas
 import numpy as np
+import urllib.request
+import certifi
 from bs4 import BeautifulSoup
 import requests
 import re
 import regex
+import ssl
 
 
 def get_links_from_google_search(query):
@@ -69,39 +72,88 @@ def print_list_of_sites(sites):
     options = dict()
     for i, site in enumerate(sites.keys()):
         options[i] = site
+        # Left align i with 3 character spaces
         print(f'  {i:<3}- {site}')
     print()
-    user_num = int(input("Please enter a number to investivate a site further: "))
-    while(user_num < 0 or user_num > len(sites)): 
+    user_num = int(
+        input("Please enter a number to investivate a site further: "))
+    while(user_num < 0 or user_num > len(sites)):
         user_num = input("Please select a number from the list above: ")
     return options[user_num]
 
 
+def check_url(url):
+    print("---")
+    print("Checking URL...")
+    try:
+        html = urllib.request.urlopen(url).read()
+        return html
+    except:
+        print("Error retreiving HTML content...")
+        return None
+
+
+def get_html_content(user_selection, url):
+    print("---")
+    print("Retreiving text for: " + user_selection)
+    # print(url)
+    text = []
+    html = urllib.request.urlopen(url).read()
+
+    soup = BeautifulSoup(html, features="html.parser")
+    ps = soup.body.find_all('p')
+    for p in ps:
+        line = p.get_text()
+        # Removes any blank strings:
+        if line and not regex.search("^\s*$", line):
+            text.append(line)
+
+    return text
+
+def get_summary(text):
+    print("---")
+    print("Summarizing text...")
+    summary = summarize(text, word_count=150)
+    return summary
+
+
+
 def main(searchterm):
+    # I think this is necessary otherwise you get bad permission HTTP responses.
+    ssl._create_default_https_context = ssl._create_unverified_context
     print("---")
     print("Retreiving Google results for: '"+searchterm+"'")
     links = get_links_from_google_search(searchterm)
     sites = find_site_from_url(links)
     user_selection = print_list_of_sites(sites)
+
+    while(not check_url(sites[user_selection])):
+        print("Error retrieving data, please try again.")
+        user_selection = print_list_of_sites(sites)
+
+    text_list = get_html_content(user_selection, sites[user_selection])
+    text_block = "".join(text_list)
+    summary = get_summary(text_block)
+
     print("---")
-    print("Selection: " + user_selection)
+    print(summary)
 
 
 if __name__ == "__main__":
     if(len(sys.argv) > 2):
         # Too many arguments
         print("Please enter only one keyword to search.")
-        searchterm=input("Search term: ")
+        searchterm = input("Search term: ")
         while(' ' in searchterm or searchterm == ''):
             print("Please enter only one keyword to search.")
-            searchterm=input("Search term: ")
+            searchterm = input("Search term: ")
         main(searchterm)
     elif(len(sys.argv) == 2 and sys.argv[1] != ''):
         main(sys.argv[1])
     else:
         print("Please enter only one keyword to search.")
-        searchterm=input("Search term: ")
+        searchterm = input("Search term: ")
         while(' ' in searchterm or searchterm == ''):
             print("Please enter only one keyword to search.")
-            searchterm=input("Search term: ")
+            searchterm = input("Search term: ")
         main(searchterm)
