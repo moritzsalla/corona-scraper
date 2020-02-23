@@ -90,10 +90,10 @@ def check_url(url):
     print(f"URL: {url}")
     try:
         # I think this is necessary otherwise you get bad permission HTTP responses.
-        ssl._create_default_https_context=ssl._create_unverified_context
+        ssl._create_default_https_context = ssl._create_unverified_context
         html = urllib.request.urlopen(url)
         http_response_code = html.getcode()
-        print(f"!!! urllib Response code: {http_response_code}")
+        #  print(f"!!! urllib Response code: {http_response_code}")
         if(http_response_code >= 200 and http_response_code < 300):
             html = html.read()
             return html
@@ -106,7 +106,7 @@ def check_url(url):
             print("Trying with 'requests'...")
             html = requests.get(url)
             http_response_code = html.status_code
-            print(f"!!! requests Response code: {http_response_code}")
+            #  print(f"!!! requests Response code: {http_response_code}")
             if(http_response_code >= 200 and http_response_code < 300):
                 return html
             else:
@@ -121,26 +121,25 @@ def check_url(url):
             return False
 
 
-
-def get_html_content(user_selection, url):
-    print("---")
-    print("Retreiving text for: " + user_selection)
-    # print(url)
-    text = []
-    html = urllib.request.urlopen(url).read()
-
-    soup = BeautifulSoup(html, features="html.parser")
-    ps = soup.body.find_all('p')
-    # Check if is empty
-    if not ps:
-        print("Found no 'p' tags")
-    for p in ps:
-        line = p.get_text()
-        # Removes any blank strings:
-        if line and not regex.search("^\s*$", line):
-            text.append(line)
-
-    return text
+#  def get_html_content(user_selection, url):
+    #  print("---")
+    #  print("Retreiving text for: " + user_selection)
+    #  # print(url)
+    #  text = []
+    #  html = urllib.request.urlopen(url).read()
+#
+    #  soup = BeautifulSoup(html, features="html.parser")
+    #  ps = soup.body.find_all('p')
+    #  # Check if is empty
+    #  if not ps:
+        #  print("Found no 'p' tags")
+    #  for p in ps:
+        #  line = p.get_text()
+        #  # Removes any blank strings:
+        #  if line and not regex.search("^\s*$", line):
+            #  text.append(line)
+#
+    #  return text
 
 def get_html_content_from_request(html):
     if(type(html) == requests.models.Response):
@@ -162,7 +161,6 @@ def get_html_content_from_request(html):
     return text
 
 
-
 def get_summary(text):
     print("---")
     print("Summarizing text...")
@@ -181,33 +179,34 @@ def get_key_words(text):
 def main(searchterm):
     print("---")
     print("Retreiving Google results for: '"+searchterm+"'")
-    links=get_links_from_google_search(searchterm)
-    sites=find_site_from_url(links)
-    user_selection=print_list_of_sites(sites)
+    links = get_links_from_google_search(searchterm)
+    sites = find_site_from_url(links)
+    user_selection = print_list_of_sites(sites)
     # .split("&sa")[0] removes some extra Google junk on the url
-    url_to_search=sites[user_selection].split("&sa")[0]
+    url_to_search = sites[user_selection].split("&sa")[0]
     html = check_url(url_to_search)
 
     while(not html):
         print("---")
         print("! Error retrieving data, please try again.")
-        user_selection=print_list_of_sites(sites)
+        user_selection = print_list_of_sites(sites)
 
-    text_list=get_html_content_from_request(html)
-    text_block="".join(text_list)
+    text_list = get_html_content_from_request(html)
+    text_block = "".join(text_list)
 
-    summary=get_summary(text_block)
+    summary = get_summary(text_block)
     print()
     print(summary)
 
-    words=get_key_words(summary)
+    words = get_key_words(summary)
 
     print(f"Keywords: ", end='')
     for word in words:
         print(word, end=' ')
     print()
     print("---")
-    automate = input("Would you like to automate the process and view the results? (y/n): ")
+    automate = input(
+        "Would you like to automate the process and view the results? (y/n): ")
     while(automate != "y" and automate != "n"):
         automate = input("Please choose 'y' or 'n': ")
 
@@ -219,31 +218,33 @@ def main(searchterm):
             url_to_search = url.split("&sa")[0]
             html = check_url(url_to_search)
             if(html):
-                text_list=get_html_content_from_request(html)
-                text_block="".join(text_list)
-                summary=get_summary(text_block)
-                words=get_key_words(summary)
+                text_list = get_html_content_from_request(html)
+                text_block = "".join(text_list)
+                summary = get_summary(text_block)
+                words = get_key_words(summary)
                 results[site] = words
             else:
                 continue
 
         for site, words in results.items():
-            print(f"{site}: ", end="")
+            print(f"{site:<12}:", end="")
+            limit=10 # Good line length for my terminal output
+            i=0
             for word in words:
-                print(f"{word}, ", end="")
+                if(i < limit):
+                    print(f"{word:<14}", end="  ")
+                i += 1
             print()
-
-
 
 
 if __name__ == "__main__":
     if(len(sys.argv) > 2):
         # Too many arguments
         print("Please enter only one keyword to search.")
-        searchterm=input("Search term: ")
+        searchterm = input("Search term: ")
         while(' ' in searchterm or searchterm == ''):
             print("Please enter only one keyword to search.")
-            searchterm=input("Search term: ")
+            searchterm = input("Search term: ")
         main(searchterm)
     elif(len(sys.argv) == 2 and sys.argv[1] != ''):
         main(sys.argv[1])
@@ -251,6 +252,6 @@ if __name__ == "__main__":
         #  print("Please enter only one keyword to search.")
         #  searchterm = input("Search term: ")
         #  while(' ' in searchterm or searchterm == ''):
-            #  print("Please enter only one keyword to search.")
-            #  searchterm = input("Search term: ")
+        #  print("Please enter only one keyword to search.")
+        #  searchterm = input("Search term: ")
         #  main(searchterm)
