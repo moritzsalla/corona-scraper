@@ -61,7 +61,9 @@ def find_site_from_url(links):
     sites = dict()
     for link in links:
         res = regex.search('(?<=((\/{2}\.)|(w{3}\.)|(\w+)\.))\w+', link)
-        sites[res.group(0)] = link
+        site = res.group(0)
+        if(site != "google"):
+            sites[site] = link
     return sites
 
 
@@ -85,27 +87,38 @@ def print_list_of_sites(sites):
 def check_url(url):
     print("---")
     print("Checking URL...")
-    print(f"URL: {0}", url)
+    print(f"URL: {url}")
     try:
         # I think this is necessary otherwise you get bad permission HTTP responses.
         ssl._create_default_https_context=ssl._create_unverified_context
-        html = urllib.request.urlopen(url).read()
-        return html
+        html = urllib.request.urlopen(url)
+        http_response_code = html.getcode()
+        print(f"!!! urllib Response code: {http_response_code}")
+        if(http_response_code >= 200 and http_response_code < 300):
+            html = html.read()
+            return html
+        else:
+            # Bad response
+            raise Exception
     except:
         print("Error retreiving HTML content with 'urllib'.")
         try:
             print("Trying with 'requests'...")
             html = requests.get(url)
-            if not html:
-                raise Exception
-            else:
+            http_response_code = html.status_code
+            print(f"!!! requests Response code: {http_response_code}")
+            if(http_response_code >= 200 and http_response_code < 300):
                 return html
+            else:
+                # Bad response
+                raise Exception
+
         except:
             print("Error retreiving HTML content with 'requests'.")
             print("See 'failed_urls.txt'.")
             with open("failed_urls.txt", "a") as file:
                 file.write(url + '\n')
-            return None
+            return False
 
 
 
@@ -129,6 +142,26 @@ def get_html_content(user_selection, url):
 
     return text
 
+def get_html_content_from_request(html):
+    if(type(html) == requests.models.Response):
+        # requests Response
+        html = html.content
+    text = []
+
+    soup = BeautifulSoup(html, features="html.parser")
+    ps = soup.body.find_all('p')
+    # Check if is empty
+    if not ps:
+        print("Found no 'p' tags")
+    for p in ps:
+        line = p.get_text()
+        # Removes any blank strings:
+        if line and not regex.search("^\s*$", line):
+            text.append(line)
+
+    return text
+
+
 
 def get_summary(text):
     print("---")
@@ -141,8 +174,8 @@ def get_summary(text):
 def get_key_words(text):
     print("---")
     print("Finding keywords...")
-    keywords = keywords(text).split('\n')
-    return keywords
+    words = keywords(text).split('\n')
+    return words
 
 
 def main(searchterm):
@@ -153,18 +186,54 @@ def main(searchterm):
     user_selection=print_list_of_sites(sites)
     # .split("&sa")[0] removes some extra Google junk on the url
     url_to_search=sites[user_selection].split("&sa")[0]
+    html = check_url(url_to_search)
 
-    while(not check_url(url_to_search)):
+    while(not html):
         print("---")
         print("! Error retrieving data, please try again.")
         user_selection=print_list_of_sites(sites)
 
-    text_list=get_html_content(user_selection, url_to_search)
+    text_list=get_html_content_from_request(html)
     text_block="".join(text_list)
-    summary=get_summary(text_block)
 
+    summary=get_summary(text_block)
     print()
     print(summary)
+
+    words=get_key_words(summary)
+
+    print(f"Keywords: ", end='')
+    for word in words:
+        print(word, end=' ')
+    print()
+    print("---")
+    automate = input("Would you like to automate the process and view the results? (y/n): ")
+    while(automate != "y" and automate != "n"):
+        automate = input("Please choose 'y' or 'n': ")
+
+    if(automate == "n"):
+        sys.exit(0)
+    elif(automate == "y"):
+        results = dict()
+        for site, url in sites.items():
+            url_to_search = url.split("&sa")[0]
+            html = check_url(url_to_search)
+            if(html):
+                text_list=get_html_content_from_request(html)
+                text_block="".join(text_list)
+                summary=get_summary(text_block)
+                words=get_key_words(summary)
+                results[site] = words
+            else:
+                continue
+
+        for site, words in results.items():
+            print(f"{site}: ", end="")
+            for word in words:
+                print(f"{word}, ", end="")
+            print()
+
+
 
 
 if __name__ == "__main__":
